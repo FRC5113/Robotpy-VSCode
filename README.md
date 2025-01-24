@@ -25,3 +25,38 @@ This extension is ideal for users who frequently work with RobotPy in their robo
 - RobotPy Test: Runs unit tests on the robot code with flags for built-in tests and coverage mode.  
 - Robotpy Sim: Runs the robot simulation with options to configure the GUI, DS socket, and websim extensions for different simulation environments.  
 - By enabling the selection of multiple flags in one go, the extension streamlines the process of configuring and executing RobotPy commands, improving workflow efficiency.
+
+
+## Building Extension
+
+### 1. Install npm (Node Package Manager)
+
+To start working with the package, you'll need to have Node.js and npm (Node Package Manager) installed on your system. If you don't have them installed, follow these steps:
+
+
+- Visit the official Node.js website: [https://nodejs.org/](https://nodejs.org/).
+- Download the latest LTS version for your operating system.
+- Follow the installation instructions for your platform.
+
+To confirm that Node.js and npm are successfully installed, run the following commands in your terminal or command prompt:
+
+```
+node -v
+npm -v
+```
+You should see the version numbers for both Node.js and npm.
+
+### 2. Install VSCE
+To create and manage your VSCE package, you need to install the VSCE CLI tool. In your terminal or command prompt, run the following command:
+
+```
+npm install -g vsce
+```
+This will install the VSCE CLI globally on your machine.
+
+### 3. Package the Extension
+Navigate to the root of your extension's project folder in the terminal, then run the following command to build the VSCE package:
+```
+vsce package
+```
+This will generate a .vsix file, which is the packaged extension ready for installation.
