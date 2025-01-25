@@ -1,5 +1,6 @@
 // Import necessary VS Code modules
 import * as vscode from 'vscode';
+import * as path from 'path';
 
 /**
  * Activate the extension
@@ -21,6 +22,12 @@ export function activate(context: vscode.ExtensionContext): void {
       runRobotPyCommand(command);
     })
   );
+
+  context.subscriptions.push(
+    vscode.commands.registerCommand('robotpy.runBlackFormatter', () => {
+      runBlackFormatter();
+    })
+  );
 }
 
 /**
@@ -31,6 +38,15 @@ function runRobotPyCommand(command: string): void {
   const terminal = vscode.window.createTerminal('RobotPy Terminal');
   terminal.show();
   terminal.sendText(command);
+}
+
+/**
+ * Execute the Black formatter in the integrated terminal
+ */
+function runBlackFormatter(): void {
+  const terminal = vscode.window.createTerminal('Black Formatter');
+  terminal.show();
+  terminal.sendText('black .');
 }
 
 /**
@@ -53,6 +69,8 @@ class RobotPySidebarProvider implements vscode.WebviewViewProvider {
     webviewView.webview.onDidReceiveMessage((message: { command: string; value: string }) => {
       if (message.command === 'runCommand') {
         runRobotPyCommand(message.value);
+      } else if (message.command === 'runBlackFormatter') {
+        runBlackFormatter();
       } else {
         console.error('Invalid message format:', message);
       }
@@ -87,7 +105,7 @@ class RobotPySidebarProvider implements vscode.WebviewViewProvider {
             margin-bottom: 8px;
         }
 
-        select, button {
+        select, input[type="text"], button {
             width: 250px;
             margin: 10px auto;
             padding: 12px;
@@ -100,107 +118,120 @@ class RobotPySidebarProvider implements vscode.WebviewViewProvider {
             transition: background-color 0.3s ease;
         }
 
-        select:focus, button:focus {
+        input[type="text"] {
+            background-color: #f0f0f0;
+            color: #333333;
+        }
+
+        select:focus, input[type="text"]:focus, button:focus {
             outline: none;
             border-color: #005a9e;
         }
 
-        button:hover, select:hover {
+        button:hover, select:hover, input[type="text"]:hover {
             background-color: #005a9e;
+        }
+
+        .checkbox-container {
+            display: flex;
+            flex-direction: column;
+            align-items: flex-start;
+        }
+
+        .checkbox-container label {
+            margin: 5px 0;
         }
     </style>
 </head>
 <body>
-    <!-- RobotPy Deploy Command with Single Select for Flags -->
-    <label for="deploy-options">Deploy Options (Select Flag)</label>
-    <select id="deploy-options">
-		<option value="">None</option>
-        <option value="--skip-tests">Skip Tests</option>
-        <option value="--debug">Debug Mode</option>
-        <option value="--nc">Netconsole</option>
-        <option value="--force-install">Force Install</option>
-        <option value="--large">Allow Large Files</option>
-        <option value="--no-verify">No Verify</option>
-        <option value="--no-install">No Install</option>
-        <option value="--robot">Set Robot</option>
-        <option value="--team">Set Team Number</option>
-    </select>
-    <button onclick="runCommandFromDropdown('deploy')">Run Deploy</button>
+    <label for="dir-input">Directory</label>
+    <input type="text" id="dir-input" placeholder="Enter directory path">
 
-    <!-- RobotPy Sync Command with Single Select for Flags -->
-    <label for="sync-options">Sync Options (Select Flag)</label>
-    <select id="sync-options">
-		<option value="">None</option>
-        <option value="--user">User Install</option>
-        <option value="--use-certifi">Use Certifi</option>
-        <option value="--no-install">No Install</option>
-        <option value="--no-upgrade-project">No Upgrade</option>
+    <label for="subcommands">Subcommand</label>
+    <select id="subcommands" onchange="updateFlags()">
+        <option value="deploy">Deploy</option>
+        <option value="sync">Sync</option>
+        <option value="test">Test</option>
+        <option value="sim">Simulation</option>
+        <option value="undeploy">Undeploy</option>
     </select>
-    <button onclick="runCommandFromDropdown('sync')">Run Sync</button>
 
-    <!-- RobotPy Test Command with Single Select for Flags -->
-    <label for="test-options">Test Options (Select Flag)</label>
-    <select id="test-options">
-		<option value="">None</option>
-        <option value="--builtin">Use Built-in Tests</option>
-        <option value="--coverage-mode">Coverage Mode</option>
-    </select>
-    <button onclick="runCommandFromDropdown('test')">Run Test</button>
+    <div class="checkbox-container" id="flags-container"></div>
 
-    <!-- RobotPy Simulation Command with Single Select for Flags -->
-    <label for="sim-options">Simulation Options (Select Flag)</label>
-    <select id="sim-options">
-		<option value="">None</option>
-        <option value="--nogui">Don't Use The GUI</option>
-        <option value="--ds-socket">DS Socket Extension</option>
-        <option value="--ws-client">Websim Client Extensions</option>
-        <option value="--ws-server">Websim Server Extensions</option>
-    </select>
-    <button onclick="runCommandFromDropdown('sim')">Run Simulation</button>
-
-    <!-- RobotPy Undeploy Command -->
-    <label for="undeploy-options">Undeploy Options</label>
-    <select id="undeploy-options">
-		<option value="">None</option>
-        <option value="--yes">No Prompt</option>
-    </select>
-    <button onclick="runCommandFromDropdown('undeploy')">Run Undeploy</button>
+    <button onclick="runCommand()">Run Command</button>
+    <button onclick="clearFlags()">Clear Flags</button>
+    <button onclick="runBlackFormatter()">Run Black Formatter</button>
 
     <script>
-        // Simulate VS Code API for messaging
         const vscode = acquireVsCodeApi();
 
-        // Function to send a command to the backend from selections
-        function runCommandFromDropdown(commandType) {
-            let selectedCommand = "";
-            if (commandType === 'deploy') {
-                selectedCommand = 'robotpy deploy ' + Array.from(document.getElementById('deploy-options').selectedOptions)
-                .map(option => option.value)
-                .join(' ');
-            } else if (commandType === 'sync') {
-                selectedCommand = 'robotpy sync ' + Array.from(document.getElementById('sync-options').selectedOptions)
-                .map(option => option.value)
-                .join(' ');
-            } else if (commandType === 'test') {
-                selectedCommand = 'robotpy test ' + Array.from(document.getElementById('test-options').selectedOptions)
-                .map(option => option.value)
-                .join(' ');
-            } else if (commandType === 'sim') {
-                selectedCommand = 'robotpy sim ' + Array.from(document.getElementById('sim-options').selectedOptions)
-                .map(option => option.value)
-                .join(' ');
-            } else if (commandType === 'undeploy') {
-                selectedCommand = 'robotpy undeploy '
-            }
+        const flags = {
+            deploy: [
+                "--skip-tests", "--debug", "--nc", "--force-install",
+                "--large", "--no-verify", "--no-install", "--robot", "--team"
+            ],
+            sync: [
+                "--user", "--use-certifi", "--no-install", "--no-upgrade-project"
+            ],
+            test: [
+                "--builtin", "--coverage-mode"
+            ],
+            sim: [
+                "--nogui", "--ds-socket", "--ws-client", "--ws-server"
+            ],
+            undeploy: [
+                "--yes"
+            ]
+        };
 
-            // Post message with selected command
-            vscode.postMessage({ command: 'runCommand', value: selectedCommand });
+        function updateFlags() {
+            const subcommand = document.getElementById('subcommands').value;
+            const flagsContainer = document.getElementById('flags-container');
+            flagsContainer.innerHTML = '';
+
+            flags[subcommand].forEach(flag => {
+                const checkbox = document.createElement('input');
+                checkbox.type = 'checkbox';
+                checkbox.id = flag;
+                checkbox.value = flag;
+
+                const label = document.createElement('label');
+                label.htmlFor = flag;
+                label.textContent = flag;
+
+                flagsContainer.appendChild(checkbox);
+                flagsContainer.appendChild(label);
+            });
         }
+
+        function runCommand() {
+            const subcommand = document.getElementById('subcommands').value;
+            const selectedFlags = Array.from(document.querySelectorAll('#flags-container input:checked'))
+                .map(checkbox => checkbox.value)
+                .join(' ');
+
+            const dir = document.getElementById('dir-input').value;
+            const isWindows = navigator.platform.startsWith('Win');
+            const cdCommand = dir ? (isWindows ? \`cd \${dir}; \` : \`cd \${dir} && \`) : '';
+            const command = \`\${cdCommand}robotpy \${subcommand} \${selectedFlags}\`.trim();
+
+            vscode.postMessage({ command: 'runCommand', value: command });
+        }
+
+        function runBlackFormatter() {
+            vscode.postMessage({ command: 'runBlackFormatter' });
+        }
+
+        function clearFlags() {
+            const checkboxes = document.querySelectorAll('#flags-container input:checked');
+            checkboxes.forEach(checkbox => checkbox.checked = false);
+        }
+
+        // Initialize flags for the default subcommand
+        updateFlags();
     </script>
 </body>
 </html>
-
-
     `;
   }
 }
