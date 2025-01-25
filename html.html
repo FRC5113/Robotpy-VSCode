@@ -1,55 +1,4 @@
-import * as vscode from 'vscode';
-
-export function activate(context: vscode.ExtensionContext): void {
-  const sidebarProvider = new RobotPySidebarProvider(context.extensionUri);
-
-  context.subscriptions.push(
-    vscode.window.registerWebviewViewProvider(
-      'robotpy-sidebar',
-      sidebarProvider
-    )
-  );
-
-  context.subscriptions.push(
-    vscode.commands.registerCommand('robotpy.runCommand', (command: string) => {
-      runRobotPyCommand(command);
-    })
-  );
-}
-
-function runRobotPyCommand(command: string): void {
-  const terminal = vscode.window.createTerminal('RobotPy Terminal');
-  terminal.show();
-  terminal.sendText(command);
-}
-
-class RobotPySidebarProvider implements vscode.WebviewViewProvider {
-  private readonly extensionUri: vscode.Uri;
-
-  constructor(extensionUri: vscode.Uri) {
-    this.extensionUri = extensionUri;
-  }
-
-  resolveWebviewView(webviewView: vscode.WebviewView): void {
-    webviewView.webview.options = {
-      enableScripts: true,
-    };
-
-    webviewView.webview.html = this.getHtmlForWebview(webviewView.webview);
-
-    webviewView.webview.onDidReceiveMessage((message: { command: string; value: string }) => {
-      if (message.command === 'runCommand') {
-        
-        runRobotPyCommand(message.value);
-      } else {
-        console.error('Invalid message format:', message);
-      }
-    });
-  }
-
-  private getHtmlForWebview(webview: vscode.Webview): string {
-    
-    return `<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
@@ -193,8 +142,4 @@ class RobotPySidebarProvider implements vscode.WebviewViewProvider {
         }
     </script>
 </body>
-</html>`;
-  }
-}
-
-export function deactivate(): void {}
+</html>
