@@ -1,6 +1,7 @@
 // Import necessary VS Code modules
 import * as vscode from 'vscode';
 import * as path from 'path';
+import { promises as fs } from "fs";
 
 /**
  * Activate the extension
@@ -26,6 +27,11 @@ export function activate(context: vscode.ExtensionContext): void {
   context.subscriptions.push(
     vscode.commands.registerCommand('robotpy.runBlackFormatter', () => {
       runBlackFormatter();
+    })
+  );
+  context.subscriptions.push(
+    vscode.commands.registerCommand('robotpy.setTestType', (value: string) => {
+      setTestType(value);
     })
   );
 }
@@ -54,6 +60,11 @@ function runBlackFormatter(): void {
   const terminal = vscode.window.createTerminal('Black Formatter');
   terminal.show();
   terminal.sendText('black .');
+}
+function setTestType(value: string): void {
+  const terminal = vscode.window.createTerminal('Test Setter');
+  
+  
 }
 
 /**
@@ -253,7 +264,26 @@ class RobotPySidebarProvider implements vscode.WebviewViewProvider {
     run: [],
   };
 
+      function updateTestType() {
+        const dir = document.getElementById('dir-input').value;
+        const isWindows = navigator.platform.startsWith('Win');
+        const cdCommand = dir ? (isWindows ? \`cd \${dir}; \` : \`cd \${dir} && \`) : '';
+        const command = \`\${cdCommand}robotpy \${subcommand} \${selectedFlags}\`.trim();
 
+        if (subcommand === 'test') {
+          const testTypelabel = document.getElementById('test-type').value;
+          if (testTypelabel === 'autonomous') {
+            const testtype = 'test_autonomous';
+          }else if (testTypelabel === 'teleop') {
+            const testtype = 'test_autonomous';
+          } else if (testTypelabel === 'disabled') {
+            const testtype = 'test_autonomous';
+          } else if (testTypelabel === 'all') {
+            vscode.postMessage({ value: all });
+          }
+          if (testtype !== 'all') {
+            vscode.postMessage({ value: testtype });
+      }
 
       function updateFlags() {
         const subcommand = document.getElementById('subcommands').value;
