@@ -41,8 +41,18 @@
       },
       {
         "command": "robotpy.setTesttype",
+        
         "title": "Set Test Type"
+      },
+      {
+        "command": "extension.saveDirectory",
+        "title": "Save Directory"
+      },
+      {
+        "command": "extension.loadDirectory",
+        "title": "Load Directory"
       }
+
     ]
   },
   "repository": {

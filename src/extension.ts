@@ -2,6 +2,7 @@
 import * as vscode from 'vscode';
 import * as fs from "fs";
 import * as path from 'path';
+import * as os from 'os';
 
 /**
  * Activate the extension
@@ -10,6 +11,7 @@ import * as path from 'path';
 export function activate(context: vscode.ExtensionContext): void {
   // Register a command to open the RobotPy Sidebar
   const sidebarProvider = new RobotPySidebarProvider(context.extensionUri);
+  
 
   context.subscriptions.push(
     vscode.window.registerWebviewViewProvider(
@@ -29,9 +31,18 @@ export function activate(context: vscode.ExtensionContext): void {
       runBlackFormatter();
     })
   );
+
+  // Register the 'robotpy.setTesttype' command
   context.subscriptions.push(
-    vscode.commands.registerCommand('robotpy.setTesttype', (dir: string, value: string) => {
-      updateTestType(dir, value);
+    vscode.commands.registerCommand('robotpy.setTesttype', (command: string, contents: string, dir: string) => {
+      // Ensure that the directory is valid
+    
+
+      // Use path.join to create a valid file path, works cross-platform
+      const fullFilePath = path.join(dir, 'tests', 'pyfrc_test.py');
+
+      // Call the function to update the test type, passing the correct file path
+      updateTestType(fullFilePath, contents, dir);
     })
   );
 }
@@ -56,48 +67,33 @@ function runBlackFormatter(): void {
   terminal.sendText('black .');
 }
 
-function updateTestType(dir: string, testType: string): void {
-  // Define the path to the test file
-  const filePath = path.join(dir, 'tests', 'pyfrc_test.py');
-  
-  // Check if the file exists
-  if (!fs.existsSync(filePath)) {
-    console.log('File does not exist');
-    return;
+function updateTestType(filePath: string, contents: string, dir: string) {
+  const terminal = vscode.window.createTerminal({
+      cwd: dir, // Set the working directory for the terminal
+      name: 'File Editor Terminal'
+  });
+  terminal.show();
+
+  // Determine the appropriate command based on the OS
+  let clearCommand: string;
+  let setCommand: string;
+
+  if (os.platform() === 'win32') {
+      // For Windows
+      clearCommand = `echo. > ${filePath}`;  // Clears the file in Command Prompt
+      setCommand = `echo ${contents} > ${filePath}`; // Writes the contents to the file
+  } else {
+      // For Linux/macOS
+      clearCommand = `> ${filePath}`; // Clears the file in Unix-like systems
+      setCommand = `echo "${contents}" > ${filePath}`; // Writes the contents to the file
   }
 
-  // Read the file contents
-  fs.readFile(filePath, 'utf8', (err, data) => {
-    if (err) {
-      console.error('Error reading file:', err);
-      return;
-    }
+  // Run the commands in sequence in the terminal
+  terminal.sendText(clearCommand);
+  terminal.sendText(setCommand);
 
-    // Update the content based on the testType value
-    let updatedData: string = '';
-    if (testType === 'all') {
-      updatedData = 'from pyfrc.tests import *';
-    } else if (testType === 'autonomous') {
-      updatedData = 'from pyfrc.tests.basic import test_autonomous';
-    } else if (testType === 'teleop') {
-      updatedData = 'from pyfrc.tests.basic import test_operator_control';
-    } else if (testType === 'disabled') {
-      updatedData = 'from pyfrc.tests.basic import test_disabled';
-    } else if (testType === 'practice') {
-      updatedData = 'from pyfrc.tests.basic import test_practice';
-    } else {
-      updatedData = 'from pyfrc.tests import *';
-    }
-
-    // Write the updated content back to the file
-    fs.writeFile(filePath, updatedData, 'utf8', (err) => {
-      if (err) {
-        console.error('Error writing to file:', err);
-      } else {
-        console.log('File content updated successfully');
-      }
-    });
-  });
+  // Show the terminal
+  
 }
 
 /**
