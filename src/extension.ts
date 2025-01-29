@@ -42,7 +42,7 @@ export function activate(context: vscode.ExtensionContext): void {
       const fullFilePath = path.join(dir, 'tests', 'pyfrc_test.py');
 
       // Call the function to update the test type, passing the correct file path
-      updateTestType(fullFilePath, contents, dir);
+      updateTestType('C:\\Users\\rradt\\Desktop\\2025-Reefscape-1\\src\\tests\\pyfrc_test.py', contents);
     })
   );
 }
@@ -67,21 +67,20 @@ function runBlackFormatter(): void {
   terminal.sendText('black .');
 }
 
-function updateTestType(filePath: string, contents: string, dir: string) {
-  const terminal = vscode.window.createTerminal({
-      cwd: dir, // Set the working directory for the terminal
-      name: 'File Editor Terminal'
-  });
+function updateTestType(filePath: string, contents: string) {
+  const terminal = vscode.window.createTerminal('Test Type Setter');
   terminal.show();
-
   // Determine the appropriate command based on the OS
   let clearCommand: string;
   let setCommand: string;
+  console.log(os.platform());
+  console.log(filePath);
+  console.log(contents);
 
   if (os.platform() === 'win32') {
       // For Windows
-      clearCommand = `echo. > ${filePath}`;  // Clears the file in Command Prompt
-      setCommand = `echo ${contents} > ${filePath}`; // Writes the contents to the file
+      clearCommand = `Set-Content -Path "${filePath}" -Value ""`;  // Clears the file in Command Prompt
+      setCommand = `Set-Content -Path "${filePath}" -Value "${contents}"`; // Writes the contents to the file
   } else {
       // For Linux/macOS
       clearCommand = `> ${filePath}`; // Clears the file in Unix-like systems
@@ -110,15 +109,17 @@ class RobotPySidebarProvider implements vscode.WebviewViewProvider {
     webviewView.webview.options = {
       enableScripts: true, // Enable scripts in the webview
     };
-
+  
     webviewView.webview.html = this.getHtmlForWebview(webviewView.webview);
-
+  
     // Handle messages sent from the webview
-    webviewView.webview.onDidReceiveMessage((message: { command: string; value: string }) => {
+    webviewView.webview.onDidReceiveMessage((message: { command: string; value: string; contents?: string; dir?: string }) => {
       if (message.command === 'runCommand') {
         runRobotPyCommand(message.value);
       } else if (message.command === 'runBlackFormatter') {
         runBlackFormatter();
+      } else if (message.command === 'setTesttype' && message.contents && message.dir) {
+        updateTestType(message.dir, message.contents);
       } else {
         console.error('Invalid message format:', message);
       }

@@ -105,7 +105,7 @@
   <button onclick="runCommand()">Run Command</button>
   <button onclick="clearFlags()">Clear Flags</button>
   <button onclick="runBlackFormatter()">Run Black Formatter</button>
-  <button onclick="runeeditor()">Run Editor</button>
+  
 
   <script>
     const vscode = acquireVsCodeApi();
@@ -230,47 +230,45 @@
     function setTesttype() {
         const testTypeSelect = document.getElementById('test-type');
         const selectedTestType = testTypeSelect.value;
-        const dir = document.getElementById('dir-input').value.trim();  // Make sure to trim any spaces
-        const fullFilePath = path.join(dir, 'tests', 'pyfrc_test.py');
+        let dir =  document.getElementById('dir-input').value.trim();  // Make sure to trim any spaces
+        let full = ".\\"
+        
+
+        if (dir === '') {
+            dir = full;
+        }
+        
 
         // Check if the directory is valid
-        if (!dir) {
-            console.error("Directory is empty");
-            return;  // Don't proceed if the directory is empty
-        }
+
 
         console.log('Selected test type:', selectedTestType);
-        console.log('Directory:', dir);
+        console.log('Directory:');
 
         let contents = '';
 
         switch (selectedTestType) {
             case 'autonomous':
-                contents = 'from pyfrc.tests.basic import test_autonomous';
+                content = "from pyfrc.tests.basic import test_autonomous";
                 break;
             case 'teleop':
-                contents = 'from pyfrc.tests.basic import test_teleop';
+                content = 'from pyfrc.tests.basic import test_teleop';
                 break;
             case 'disabled':
-                contents = 'from pyfrc.tests.basic import test_disabled';
+                content = 'from pyfrc.tests.basic import test_disabled';
                 break;
             case 'practice':
-                contents = 'from pyfrc.tests.basic import test_practice';
+                content = 'from pyfrc.tests.basic import test_practice';
                 break;
             case 'all':
             default:
-                contents = 'from pyfrc.tests import *';
+                content = "from pyfrc.tests import *";
                 break;
         }
 
         // Send the directory and file path to the extension for handling
 
-        vscode.postMessage({
-            command: 'setTesttype',
-            file: fullFilePath,
-            contents: contents,
-            dir: dir
-        });
+        vscode.postMessage({command: 'setTesttype', contents: content, dir: dir});
     }
 
 
