@@ -1,147 +1,190 @@
-// Import necessary VS Code modules
 import * as vscode from 'vscode';
 import * as fs from "fs";
 import * as path from 'path';
 import * as os from 'os';
 
-/**
- * Activate the extension
- * @param context - The extension context
- */
 export function activate(context: vscode.ExtensionContext): void {
-  // Register a command to open the RobotPy Sidebar
   const sidebarProvider = new RobotPySidebarProvider(context.extensionUri);
+  context.subscriptions.push(
+      vscode.window.registerWebviewViewProvider(
+          'robotpy-sidebar',
+          sidebarProvider
+      )
+  );
   
 
+
+  registerCommands(context);
+  
+}
+
+function registerCommands(context: vscode.ExtensionContext) {
+  const sidebarProvider = new RobotPySidebarProvider(context.extensionUri);
   context.subscriptions.push(
-    vscode.window.registerWebviewViewProvider(
-      'robotpy-sidebar',
-      sidebarProvider
-    )
+      vscode.window.registerWebviewViewProvider(
+          'robotpy-sidebar',
+          sidebarProvider
+      )
   );
 
   context.subscriptions.push(
-    vscode.commands.registerCommand('robotpy.runCommand', (command: string) => {
-      runRobotPyCommand(command);
+      vscode.commands.registerCommand('robotpy.runCommand', (command: string) => {
+          RobotPyTerminal(command);
+      })
+  );
+
+  context.subscriptions.push(
+      vscode.commands.registerCommand('robotpy.runBlackFormatter', () => {
+          RobotPyTerminal("black .");
+      })
+  );
+
+  context.subscriptions.push(
+      vscode.commands.registerCommand('robotpy.setTesttype', (contents: string, dir: string) => {
+          const fullFilePath = path.join(dir, 'tests', 'pyfrc_test.py');
+          updateTestType(fullFilePath, contents);
+          vscode.window.showInformationMessage(`Test type set to: ${contents}`);
+      })
+  );
+
+  context.subscriptions.push(
+    vscode.commands.registerCommand('robotpy.dirSetup', (contents: string) => {
+        dirSetup(contents);
     })
   );
 
   context.subscriptions.push(
-    vscode.commands.registerCommand('robotpy.runBlackFormatter', () => {
-      runBlackFormatter();
-    })
-  );
-
-  // Register the 'robotpy.setTesttype' command
-  context.subscriptions.push(
-    vscode.commands.registerCommand('robotpy.setTesttype', (command: string, contents: string, dir: string) => {
-      // Ensure that the directory is valid
-    
-
-      // Use path.join to create a valid file path, works cross-platform
-      const fullFilePath = path.join(dir, 'tests', 'pyfrc_test.py');
-
-      // Call the function to update the test type, passing the correct file path
-      updateTestType('C:\\Users\\rradt\\Desktop\\2025-Reefscape-1\\src\\tests\\pyfrc_test.py', contents);
+    vscode.commands.registerCommand('robotpy.readFile', (filePath: string) => {
+        const fileContents = readFile(filePath);
+        if (fileContents) {
+          sidebarProvider.postMessage({ command: 'updateDirInput', value: fileContents });
+        }
     })
   );
 }
 
-/**
- * Execute a RobotPy command in the integrated terminal
- * @param command - The command to execute
- */
-let robotPyTerminal: vscode.Terminal | undefined;
+function RobotPyTerminal(command: string): void {
+  let robotPyTerminal: vscode.Terminal | undefined;
 
-
-function runRobotPyCommand(command: string): void {
   if (!robotPyTerminal) {
     robotPyTerminal = vscode.window.createTerminal('RobotPy Terminal');
   }
   robotPyTerminal.show();
   robotPyTerminal.sendText(command);
 }
-function runBlackFormatter(): void {
-  const terminal = vscode.window.createTerminal('Black Formatter');
-  terminal.show();
-  terminal.sendText('black .');
+
+function replaceFile(filePath: string, contents: string) {
+  // Get the first workspace folder (user's opened project)
+  const workspaceFolder = vscode.workspace.workspaceFolders?.[0]?.uri.fsPath;
+
+  if (!workspaceFolder) {
+    console.error("No workspace folder is open in VS Code.");
+    vscode.window.showErrorMessage("No workspace folder is open in VS Code.");
+    return;
+  }
+  const absoluteFilePath = path.resolve(workspaceFolder, filePath);
+  const dirPath = path.dirname(absoluteFilePath);
+
+  console.log(`Updating file: ${absoluteFilePath}`);
+  console.log(`Contents: ${contents}`);
+
+  try {
+    // Ensure the parent directory exists
+    if (!fs.existsSync(dirPath)) {
+      fs.mkdirSync(dirPath, { recursive: true });
+    }
+
+    // Write the new contents to the file (overwriting it)
+    fs.writeFileSync(absoluteFilePath, contents, 'utf8');
+
+    console.log(`File updated successfully: ${absoluteFilePath}`);
+  } catch (error) {
+    console.error(`Error updating file: ${error}`);
+  }
+}
+
+function readFile(filePath: string): string | undefined {
+  // Get the first workspace folder (user's opened project)
+  const workspaceFolder = vscode.workspace.workspaceFolders?.[0]?.uri.fsPath;
+
+  if (!workspaceFolder) {
+    console.error("No workspace folder is open in VS Code.");
+    vscode.window.showErrorMessage("No workspace folder is open in VS Code.");
+    return '';
+  }
+  const absoluteFilePath = path.resolve(workspaceFolder, filePath);
+  const dirPath = path.dirname(absoluteFilePath);
+
+  try {
+    // Ensure the parent directory exists
+    if (!fs.existsSync(dirPath)) {
+      fs.mkdirSync(dirPath, { recursive: true });
+    }
+
+    // Write the new contents to the file (overwriting it)
+    const fileContents = fs.readFileSync(absoluteFilePath, 'utf8');
+
+    console.log(`File read successfully: ${absoluteFilePath}`);
+    return fileContents;
+  } catch (error) {
+    console.error(`Error updating file: ${error}`);
+  }
 }
 
 function updateTestType(filePath: string, contents: string) {
-  const terminal = vscode.window.createTerminal('Test Type Setter');
-  terminal.show();
-  // Determine the appropriate command based on the OS
-  let clearCommand: string;
-  let setCommand: string;
-  console.log(os.platform());
-  console.log(filePath);
-  console.log(contents);
-
-  if (os.platform() === 'win32') {
-      // For Windows
-      clearCommand = `Set-Content -Path "${filePath}" -Value ""`;  // Clears the file in Command Prompt
-      setCommand = `Set-Content -Path "${filePath}" -Value "${contents}"`; // Writes the contents to the file
-  } else {
-      // For Linux/macOS
-      clearCommand = `> ${filePath}`; // Clears the file in Unix-like systems
-      setCommand = `echo "${contents}" > ${filePath}`; // Writes the contents to the file
-  }
-
-  // Run the commands in sequence in the terminal
-  terminal.sendText(clearCommand);
-  terminal.sendText(setCommand);
-
-  // Show the terminal
-  
+  replaceFile(filePath, contents);
 }
 
-/**
- * Sidebar Provider for RobotPy commands
- */
+function dirSetup(contents: string) {
+  const filePath = path.join('.vscode', 'savedDir.txt');
+  replaceFile(filePath, contents);
+}
 class RobotPySidebarProvider implements vscode.WebviewViewProvider {
   private readonly extensionUri: vscode.Uri;
+  private webviewView?: vscode.WebviewView;
 
   constructor(extensionUri: vscode.Uri) {
     this.extensionUri = extensionUri;
   }
 
   resolveWebviewView(webviewView: vscode.WebviewView): void {
+    this.webviewView = webviewView;
     webviewView.webview.options = {
-      enableScripts: true, // Enable scripts in the webview
+      enableScripts: true,
     };
   
     webviewView.webview.html = this.getHtmlForWebview(webviewView.webview);
   
-    // Handle messages sent from the webview
     webviewView.webview.onDidReceiveMessage((message: { command: string; value: string; contents?: string; dir?: string }) => {
       if (message.command === 'runCommand') {
-        runRobotPyCommand(message.value);
+        RobotPyTerminal(message.value);
       } else if (message.command === 'runBlackFormatter') {
-        runBlackFormatter();
+        RobotPyTerminal("black .");
       } else if (message.command === 'setTesttype' && message.contents && message.dir) {
         updateTestType(message.dir, message.contents);
+      } else if (message.command === 'dirSetup' && message.contents) {
+        dirSetup(message.contents);
+      } else if (message.command === 'readFile' && message.value) {
+        const fileContents = readFile(message.value);
+        if (fileContents && this.webviewView) {
+          this.webviewView.webview.postMessage({ command: 'updateDirInput', value: fileContents });
+        }
       } else {
         console.error('Invalid message format:', message);
       }
     });
   }
 
-  // Read the HTML file and inject it into the webview
   private getHtmlForWebview(webview: vscode.Webview): string {
-    // Build the file path correctly across platforms
     const htmlFilePath = path.join(this.extensionUri.fsPath, 'src', 'webview.html');
-    
-    // Read the HTML content from the file
     let html = fs.readFileSync(htmlFilePath, 'utf8');
-    
-    // Replace the content security policy source
     html = html.replace(/\${cspSource}/g, webview.cspSource);
-  
     return html;
   }
-}
 
-/**
- * Deactivate the extension
- */
-export function deactivate(): void {}
+  public postMessage(message: { command: string; value: string }): void {
+    if (this.webviewView) {
+      this.webviewView.webview.postMessage(message);
+    }
+  }
+}

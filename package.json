@@ -45,14 +45,9 @@
         "title": "Set Test Type"
       },
       {
-        "command": "extension.saveDirectory",
+        "command": "robotpy.dirSetup",
         "title": "Save Directory"
-      },
-      {
-        "command": "extension.loadDirectory",
-        "title": "Load Directory"
       }
-
     ]
   },
   "repository": {

@@ -79,7 +79,7 @@
 
 <body>
   <label for="dir-input">Directory</label>
-  <input type="text" id="dir-input" placeholder="Enter directory path">
+  <input type="text" id="dir-input" placeholder="Enter directory path" onchange="saveDirectory()">
 
   <label for="subcommands">Subcommand</label>
   <select id="subcommands" onchange="updateFlags()">
@@ -105,6 +105,8 @@
   <button onclick="runCommand()">Run Command</button>
   <button onclick="clearFlags()">Clear Flags</button>
   <button onclick="runBlackFormatter()">Run Black Formatter</button>
+  <button onclick="saveDirectory()">Run Editor</button>
+  
   
 
   <script>
@@ -175,7 +177,11 @@
       ],
       run: [],
     };
-    
+
+    function saveDirectory() {
+      let dir = document.getElementById('dir-input').value.trim();
+      vscode.postMessage({ command: 'dirSetup', contents: dir });
+    }
 
     function updateFlags() {
       const subcommand = document.getElementById('subcommands').value;
@@ -232,7 +238,6 @@
         const selectedTestType = testTypeSelect.value;
         let dir =  document.getElementById('dir-input').value.trim();  // Make sure to trim any spaces
         let testdir = "\\tests\\pyfrc_test.py";
-        
 
         if (dir === '') {
             dir = `.${testdir}`;
@@ -240,10 +245,6 @@
             dir = `.\\${dir}${testdir}`;
         }
         
-
-        // Check if the directory is valid
-
-
         console.log('Selected test type:', selectedTestType);
         console.log('Directory:');
 
@@ -266,14 +267,15 @@
             default:
                 content = "from pyfrc.tests import *";
                 break;
-        }
-
-        // Send the directory and file path to the extension for handling
-
+        }      
         vscode.postMessage({command: 'setTesttype', contents: content, dir: dir});
     }
-
-
+    window.addEventListener('message', event => {
+    const message = event.data;
+    if (message.command === 'updateDirInput') {
+      document.getElementById('dir-input').value = message.value;
+    }
+  });
 
     function runCommand() {
       const subcommand = document.getElementById('subcommands').value;
@@ -293,9 +295,6 @@
       vscode.postMessage({ command: 'runBlackFormatter' });
     }
     
-    function runeeditor() {
-      vscode.postMessage({ command: 'runEditor' });
-    }
     function clearFlags() {
       const checkboxes = document.querySelectorAll('#flags-container input:checked');
       checkboxes.forEach(checkbox => checkbox.checked = false);
