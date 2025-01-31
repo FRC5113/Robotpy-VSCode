@@ -45,8 +45,16 @@
         "title": "Set Test Type"
       },
       {
+        "command": "robotpy.getDirInput",
+        "title": "Save Directory"
+      },
+      {
         "command": "robotpy.dirSetup",
         "title": "Save Directory"
+      },
+      {
+        "command": "robotpy.updateDirInput",
+        "title": "Run Test"
       }
     ]
   },

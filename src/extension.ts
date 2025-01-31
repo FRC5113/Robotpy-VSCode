@@ -61,7 +61,14 @@ function registerCommands(context: vscode.ExtensionContext) {
         }
     })
   );
+  context.subscriptions.push(
+    vscode.commands.registerCommand('robotpy.getDirInput', () => {
+        addDir();
+    })
+  );
+  
 }
+
 
 function RobotPyTerminal(command: string): void {
   let robotPyTerminal: vscode.Terminal | undefined;
@@ -74,7 +81,6 @@ function RobotPyTerminal(command: string): void {
 }
 
 function replaceFile(filePath: string, contents: string) {
-  // Get the first workspace folder (user's opened project)
   const workspaceFolder = vscode.workspace.workspaceFolders?.[0]?.uri.fsPath;
 
   if (!workspaceFolder) {
@@ -89,12 +95,10 @@ function replaceFile(filePath: string, contents: string) {
   console.log(`Contents: ${contents}`);
 
   try {
-    // Ensure the parent directory exists
     if (!fs.existsSync(dirPath)) {
       fs.mkdirSync(dirPath, { recursive: true });
     }
 
-    // Write the new contents to the file (overwriting it)
     fs.writeFileSync(absoluteFilePath, contents, 'utf8');
 
     console.log(`File updated successfully: ${absoluteFilePath}`);
@@ -104,7 +108,6 @@ function replaceFile(filePath: string, contents: string) {
 }
 
 function readFile(filePath: string): string | undefined {
-  // Get the first workspace folder (user's opened project)
   const workspaceFolder = vscode.workspace.workspaceFolders?.[0]?.uri.fsPath;
 
   if (!workspaceFolder) {
@@ -116,18 +119,16 @@ function readFile(filePath: string): string | undefined {
   const dirPath = path.dirname(absoluteFilePath);
 
   try {
-    // Ensure the parent directory exists
     if (!fs.existsSync(dirPath)) {
       fs.mkdirSync(dirPath, { recursive: true });
     }
 
-    // Write the new contents to the file (overwriting it)
     const fileContents = fs.readFileSync(absoluteFilePath, 'utf8');
 
     console.log(`File read successfully: ${absoluteFilePath}`);
     return fileContents;
   } catch (error) {
-    console.error(`Error updating file: ${error}`);
+    console.error(`Error reading file: ${error}`);
   }
 }
 
@@ -139,6 +140,13 @@ function dirSetup(contents: string) {
   const filePath = path.join('.vscode', 'savedDir.txt');
   replaceFile(filePath, contents);
 }
+
+function addDir() {
+  const filePath = path.join('.vscode', 'savedDir.txt');
+  const sidebarProvider = new RobotPySidebarProvider(vscode.Uri.file(''));
+  sidebarProvider.postMessage({ command: 'addDir', elementId: 'dir-input', newValue: readFile(filePath) });
+}
+
 class RobotPySidebarProvider implements vscode.WebviewViewProvider {
   private readonly extensionUri: vscode.Uri;
   private webviewView?: vscode.WebviewView;
@@ -152,9 +160,9 @@ class RobotPySidebarProvider implements vscode.WebviewViewProvider {
     webviewView.webview.options = {
       enableScripts: true,
     };
-  
+
     webviewView.webview.html = this.getHtmlForWebview(webviewView.webview);
-  
+
     webviewView.webview.onDidReceiveMessage((message: { command: string; value: string; contents?: string; dir?: string }) => {
       if (message.command === 'runCommand') {
         RobotPyTerminal(message.value);
@@ -169,6 +177,8 @@ class RobotPySidebarProvider implements vscode.WebviewViewProvider {
         if (fileContents && this.webviewView) {
           this.webviewView.webview.postMessage({ command: 'updateDirInput', value: fileContents });
         }
+      } else if (message.command === 'addDir') {
+        addDir();
       } else {
         console.error('Invalid message format:', message);
       }
@@ -182,9 +192,11 @@ class RobotPySidebarProvider implements vscode.WebviewViewProvider {
     return html;
   }
 
-  public postMessage(message: { command: string; value: string }): void {
+  public postMessage(message: any): void {
     if (this.webviewView) {
       this.webviewView.webview.postMessage(message);
+    } else {
+      console.error("Webview is not available.");
     }
   }
 }

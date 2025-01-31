@@ -112,6 +112,21 @@
   <script>
     const vscode = acquireVsCodeApi();
 
+    if (document.getElementById('dir-input').value === '') {
+      vscode.postMessage({ command: 'getDirInput' });
+    }
+
+    window.addEventListener('message', event => {
+      const message = event.data;
+      console.log('Received message:', message);
+      if (message.command === 'addDir') {
+        const element = document.getElementById(message.elementId);
+        if (element) {
+          element.innerText = message.newValue;
+        }
+      }
+    });
+
     const flags = {
       deploy: [
         { flag: "--skip-tests", label: "Skip Tests" },
