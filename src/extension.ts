@@ -1,24 +1,8 @@
 import * as vscode from 'vscode';
 import * as fs from "fs";
 import * as path from 'path';
-import * as os from 'os';
 
 export function activate(context: vscode.ExtensionContext): void {
-  const sidebarProvider = new RobotPySidebarProvider(context.extensionUri);
-  context.subscriptions.push(
-      vscode.window.registerWebviewViewProvider(
-          'robotpy-sidebar',
-          sidebarProvider
-      )
-  );
-  
-
-
-  registerCommands(context);
-  
-}
-
-function registerCommands(context: vscode.ExtensionContext) {
   const sidebarProvider = new RobotPySidebarProvider(context.extensionUri);
   context.subscriptions.push(
       vscode.window.registerWebviewViewProvider(
@@ -62,8 +46,11 @@ function registerCommands(context: vscode.ExtensionContext) {
     })
   );
   context.subscriptions.push(
-    vscode.commands.registerCommand('robotpy.getDirInput', () => {
-        addDir();
+    vscode.commands.registerCommand('robotpy.getDirInput', (value: string, webviewView: vscode.WebviewView) => {
+      const fileContents = readFile(value);
+      if (fileContents && webviewView) {
+        webviewView.webview.postMessage({ command: 'updateDirInput', value: fileContents });
+      }
     })
   );
   
@@ -172,13 +159,13 @@ class RobotPySidebarProvider implements vscode.WebviewViewProvider {
         updateTestType(message.dir, message.contents);
       } else if (message.command === 'dirSetup' && message.contents) {
         dirSetup(message.contents);
-      } else if (message.command === 'readFile' && message.value) {
-        const fileContents = readFile(message.value);
+      } else if (message.command === 'getDirInput') {
+        const dir = path.join('.vscode','savedDir.txt');
+        const fileContents = readFile(dir);
         if (fileContents && this.webviewView) {
           this.webviewView.webview.postMessage({ command: 'updateDirInput', value: fileContents });
         }
-      } else if (message.command === 'addDir') {
-        addDir();
+
       } else {
         console.error('Invalid message format:', message);
       }

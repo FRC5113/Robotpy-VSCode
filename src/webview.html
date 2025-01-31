@@ -8,8 +8,8 @@
   <style>
     body {
       font-family: Arial, sans-serif;
-      padding: 20px;
-      margin: 0;
+      padding: 20px auto;
+      margin: 0 auto;
       display: flex;
       flex-direction: column;
       align-items: center;
@@ -17,12 +17,12 @@
 
     h2 {
       text-align: center;
-      margin: 20px 0;
+      margin: 20px auto;
     }
 
     label {
-      font-size: 16px;
-      margin-bottom: 8px;
+      font-size: 16px auto;
+      margin-bottom: 8px auto;
     }
 
     select,
@@ -31,9 +31,9 @@
       width: 250px;
       margin: 10px auto;
       padding: 12px;
-      font-size: 14px;
-      cursor: pointer;
-      border: 1px solid #ccc;
+      font-size: 14px auto;
+      cursor: auto;
+      border: 1px solid #0078d4;
       border-radius: 4px;
       background-color: #0078d4;
       color: #ffffff;
@@ -63,16 +63,17 @@
       display: flex;
       flex-direction: column;
       align-items: flex-start;
+      
     }
 
     .checkbox-item {
       display: flex;
       align-items: center;
-      margin: 5px 0;
+      margin: 5px auto;
     }
 
     .checkbox-item label {
-      margin-left: 8px;
+      margin-left: 8px auto;
     }
   </style>
 </head>
@@ -83,8 +84,8 @@
 
   <label for="subcommands">Subcommand</label>
   <select id="subcommands" onchange="updateFlags()">
-    <option value="test">Test</option>
     <option value="deploy">Deploy</option>
+    <option value="test">Test</option>
     <option value="sync">Sync</option>
     <option value="test">Test</option>
     <option value="sim">Simulation</option>
@@ -105,9 +106,6 @@
   <button onclick="runCommand()">Run Command</button>
   <button onclick="clearFlags()">Clear Flags</button>
   <button onclick="runBlackFormatter()">Run Black Formatter</button>
-  <button onclick="saveDirectory()">Run Editor</button>
-  
-  
 
   <script>
     const vscode = acquireVsCodeApi();
@@ -252,12 +250,12 @@
         const testTypeSelect = document.getElementById('test-type');
         const selectedTestType = testTypeSelect.value;
         let dir =  document.getElementById('dir-input').value.trim();  // Make sure to trim any spaces
-        let testdir = "\\tests\\pyfrc_test.py";
+        let fullDir = ''
 
         if (dir === '') {
-            dir = `.${testdir}`;
+            fullDir = path.join('tests', 'pyfrc_test.py');
         } else {
-            dir = `.\\${dir}${testdir}`;
+            fullDir = path.join(dir, 'tests', 'pyfrc_test.py')
         }
         
         console.log('Selected test type:', selectedTestType);
