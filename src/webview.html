@@ -1,0 +1,321 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>RobotPy Commands</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      padding: 20px auto;
+      margin: 0 auto;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+    }
+
+    h2 {
+      text-align: center;
+      margin: 20px auto;
+    }
+
+    label {
+      font-size: 16px auto;
+      margin-bottom: 8px auto;
+    }
+
+    select,
+    input[type="text"],
+    button {
+      width: 250px;
+      margin: 10px auto;
+      padding: 12px;
+      font-size: 14px auto;
+      cursor: auto;
+      border: 1px solid #0078d4;
+      border-radius: 4px;
+      background-color: #0078d4;
+      color: #ffffff;
+      transition: background-color 0.3s ease;
+    }
+
+    input[type="text"] {
+      background-color: #f0f0f0;
+      color: #333333;
+    }
+
+    select:focus,
+    input[type="text"]:focus,
+    button:focus {
+      outline: none;
+      border-color: #005a9e;
+    }
+
+    button:hover,
+    select:hover,
+    input[type="text"]:hover {
+      background-color: #005a9e;
+      color: #ffffff;
+    }
+
+    .checkbox-container {
+      display: flex;
+      flex-direction: column;
+      align-items: flex-start;
+      
+    }
+
+    .checkbox-item {
+      display: flex;
+      align-items: center;
+      margin: 5px auto;
+    }
+
+    .checkbox-item label {
+      margin-left: 8px auto;
+    }
+  </style>
+</head>
+
+<body>
+  <label for="dir-input">Directory</label>
+  <input type="text" id="dir-input" placeholder="Enter directory path" onchange="saveDirectory()">
+
+  <label for="subcommands">Subcommand</label>
+  <select id="subcommands" onchange="updateFlags()">
+    <option value="deploy">Deploy</option>
+    <option value="test">Test</option>
+    <option value="sync">Sync</option>
+    <option value="test">Test</option>
+    <option value="sim">Simulation</option>
+    <option value="undeploy">Undeploy</option>
+    <option value="init">Init</option>
+    <option value="add-tests">Add Tests</option>
+    <option value="create-physics">Create Physics</option>
+    <option value="deploy-info">Deploy Info</option>
+    <option value="coverage">Coverage</option>
+    <option value="installer">Installer</option>
+    <option value="profiler">Profiler</option>
+    <option value="project">Project</option>
+    <option value="run">Run</option>
+  </select>
+
+  <div class="checkbox-container" id="flags-container"></div>
+
+  <button onclick="runCommand()">Run Command</button>
+  <button onclick="clearFlags()">Clear Flags</button>
+  <button onclick="runBlackFormatter()">Run Black Formatter</button>
+
+  <script>
+    const vscode = acquireVsCodeApi();
+
+    if (document.getElementById('dir-input').value === '') {
+      vscode.postMessage({ command: 'getDirInput' });
+    }
+
+    window.addEventListener('message', event => {
+      const message = event.data;
+      console.log('Received message:', message);
+      if (message.command === 'addDir') {
+        const element = document.getElementById(message.elementId);
+        if (element) {
+          element.innerText = message.newValue;
+        }
+      }
+    });
+
+    const flags = {
+      deploy: [
+        { flag: "--skip-tests", label: "Skip Tests" },
+        { flag: "--debug", label: "Debug Mode" },
+        { flag: "--nc", label: "NetConsole" },
+        { flag: "--nc-ds", label: "NetConsole DS" },
+        { flag: "--force-install", label: "Force Install" },
+        { flag: "--large", label: "Allow Large Files" },
+        { flag: "--no-verify", label: "No Verify" },
+        { flag: "--no-install", label: "No Install" },
+        { flag: "--ignore-image-version", label: "Ignore Image" },
+        { flag: "--no-uninstall", label: "No Uninstall" },
+        { flag: "--no-resolve", label: "No DNS Lookup" },
+      ],
+      sync: [
+        { flag: "--user", label: "User Mode" },
+        { flag: "--use-certifi", label: "Certifi SSL" },
+        { flag: "--no-install", label: "No Install" },
+        { flag: "--no-upgrade-project", label: "No Upgrade" },
+      ],
+      test: [
+        { flag: "--builtin", label: "Builtin Tests" },
+        { flag: "--coverage-mode", label: "Coverage Mode" },
+      ],
+      sim: [
+        { flag: "--nogui", label: "No GUI" },
+        { flag: "--ds-socket", label: "DS Socket" },
+        { flag: "--ws-client", label: "WS Client" },
+        { flag: "--ws-server", label: "WS Server" },
+        { flag: "--xrp", label: "XRP Mode" },
+      ],
+      undeploy: [
+        { flag: "--yes", label: "No Prompt" },
+      ],
+      "add-tests": [],
+      coverage: [
+        { flag: "--parallel-mode", label: "Parallel Mode" },
+      ],
+      "create-physics": [],
+      "deploy-info": [
+        { flag: "--robot", label: "Robot IP" },
+        { flag: "--team", label: "Team Number" },
+        { flag: "--no-resolve", label: "No DNS Lookup" },
+      ],
+      init: [],
+      installer: [
+        { flag: "cache", label: "Cache" },
+        { flag: "download", label: "Download" },
+        { flag: "download-python", label: "Download Python" },
+        { flag: "install", label: "Install Packages" },
+        { flag: "install-python", label: "Install Python" },
+        { flag: "list", label: "List Packages" },
+        { flag: "niweb", label: "NI Web" },
+        { flag: "uninstall", label: "Uninstall Packages" },
+        { flag: "uninstall-python", label: "Uninstall Python" },
+        { flag: "uninstall-robotpy", label: "Uninstall RobotPy" },
+      ],
+      profiler: [
+        { flag: "-o", label: "Output File" },
+      ],
+      project: [
+        { flag: "update-robotpy", label: "Update RobotPy" },
+      ],
+      run: [],
+    };
+
+    function saveDirectory() {
+      let dir = document.getElementById('dir-input').value.trim();
+      vscode.postMessage({ command: 'dirSetup', contents: dir });
+    }
+
+    function updateFlags() {
+      const subcommand = document.getElementById('subcommands').value;
+      const flagsContainer = document.getElementById('flags-container');
+      flagsContainer.innerHTML = '';
+
+      if (subcommand === 'test') {
+        const testTypeLabel = document.createElement('label');
+        testTypeLabel.htmlFor = 'test-type';
+        testTypeLabel.textContent = 'Test Type';
+
+        const testTypeSelect = document.createElement('select');
+        testTypeSelect.id = 'test-type';
+        testTypeSelect.onchange = setTesttype;
+
+        const testTypes = [ 'all', 'autonomous', 'teleop', 'disabled', 'practice' ];
+        testTypes.forEach(type => {
+          const option = document.createElement('option');
+          option.value = type;
+          option.textContent = type.charAt(0).toUpperCase() + type.slice(1);
+          testTypeSelect.appendChild(option);
+        });
+
+        const setType = document.createElement("button");
+        setType.textContent = "Set Test Type";
+        setType.onclick = setTesttype;
+
+        flagsContainer.appendChild(testTypeLabel);
+        flagsContainer.appendChild(testTypeSelect);
+        flagsContainer.appendChild(setType);
+      }
+
+      flags[subcommand].forEach(({ flag, label }) => {
+        const checkboxItem = document.createElement('div');
+        checkboxItem.className = 'checkbox-item';
+
+        const checkbox = document.createElement('input');
+        checkbox.type = 'checkbox';
+        checkbox.id = flag;
+        checkbox.value = flag;
+
+        const labelElement = document.createElement('label');
+        labelElement.htmlFor = flag;
+        labelElement.textContent = label;
+
+        checkboxItem.appendChild(checkbox);
+        checkboxItem.appendChild(labelElement);
+        flagsContainer.appendChild(checkboxItem);
+      });
+    }
+
+    function setTesttype() {
+        const testTypeSelect = document.getElementById('test-type');
+        const selectedTestType = testTypeSelect.value;
+        let dir =  document.getElementById('dir-input').value.trim();  // Make sure to trim any spaces
+        let fullDir = ''
+
+        if (dir === '') {
+            fullDir = path.join('tests', 'pyfrc_test.py');
+        } else {
+            fullDir = path.join(dir, 'tests', 'pyfrc_test.py')
+        }
+        
+        console.log('Selected test type:', selectedTestType);
+        console.log('Directory:');
+
+        let contents = '';
+
+        switch (selectedTestType) {
+            case 'autonomous':
+                content = "from pyfrc.tests.basic import test_autonomous";
+                break;
+            case 'teleop':
+                content = 'from pyfrc.tests.basic import test_teleop';
+                break;
+            case 'disabled':
+                content = 'from pyfrc.tests.basic import test_disabled';
+                break;
+            case 'practice':
+                content = 'from pyfrc.tests.basic import test_practice';
+                break;
+            case 'all':
+            default:
+                content = "from pyfrc.tests import *";
+                break;
+        }      
+        vscode.postMessage({command: 'setTesttype', contents: content, dir: dir});
+    }
+    window.addEventListener('message', event => {
+    const message = event.data;
+    if (message.command === 'updateDirInput') {
+      document.getElementById('dir-input').value = message.value;
+    }
+  });
+
+    function runCommand() {
+      const subcommand = document.getElementById('subcommands').value;
+      const selectedFlags = Array.from(document.querySelectorAll('#flags-container input:checked'))
+        .map(checkbox => checkbox.value)
+        .join(' ');
+
+      const dir = document.getElementById('dir-input').value;
+      const isWindows = navigator.platform.startsWith('Win');
+      const cdCommand = dir ? (isWindows ? `cd ${dir}; ` : `cd ${dir} && `) : '';
+      const command = `${cdCommand}robotpy ${subcommand} ${selectedFlags}`.trim();
+
+      vscode.postMessage({ command: 'runCommand', value: command });
+    }
+
+    function runBlackFormatter() {
+      vscode.postMessage({ command: 'runBlackFormatter' });
+    }
+    
+    function clearFlags() {
+      const checkboxes = document.querySelectorAll('#flags-container input:checked');
+      checkboxes.forEach(checkbox => checkbox.checked = false);
+    }
+
+    // Initialize flags for the default subcommand
+    updateFlags();
+  </script>
+</body>
+
+</html>
