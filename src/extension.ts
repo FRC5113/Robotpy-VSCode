@@ -53,7 +53,6 @@ export function activate(context: vscode.ExtensionContext): void {
       }
     })
   );
-  vscode.window.showInformationMessage(`Nerd :)`);
 }
 
 
@@ -117,7 +116,6 @@ function readFile(filePath: string): string | undefined {
   } catch (error) {
     console.error(`Error reading file: ${error}`);
   }
-  vscode.window.showInformationMessage(`Nerd :)`);
 }
 
 function updateTestType(filePath: string, contents: string) {
@@ -158,23 +156,18 @@ class RobotPySidebarProvider implements vscode.WebviewViewProvider {
     webviewView.webview.onDidReceiveMessage((message: { command: string; value: string; contents?: string; dir?: string }) => {
       if (message.command === 'runCommand') {
         RobotPyTerminal(message.value);
-        vscode.window.showInformationMessage(`Nerd :)`);
       } else if (message.command === 'runBlackFormatter') {
         RobotPyTerminal("black .");
-        vscode.window.showInformationMessage(`Nerd :)`);
       } else if (message.command === 'setTesttype' && message.contents && message.dir) {
         updateTestType(message.dir, message.contents);
-        vscode.window.showInformationMessage(`Nerd :)`);
       } else if (message.command === 'dirSetup' && message.contents) {
         dirSetup(message.contents);
-        vscode.window.showInformationMessage(`Nerd :)`);
       } else if (message.command === 'getDirInput') {
         const dir = path.join('.vscode', 'savedDir.txt');
         const fileContents = readFile(dir);
         if (fileContents && this.webviewView) {
           this.webviewView.webview.postMessage({ command: 'updateDirInput', value: fileContents });
         }
-        vscode.window.showInformationMessage(`Nerd :)`);
       } else {
         console.error('Invalid message format:', message);
       }
