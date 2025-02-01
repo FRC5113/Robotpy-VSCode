@@ -1,16 +1,24 @@
 {
-  "name": "robotpy-vscode",
+  "name": "robotpy-vscode-debear-edition",
   "displayName": "RobotPy Extension",
   "description": "An Extension that allows you to do RobotPy commands at the click of a button",
-  "version": "0.0.1",
+  "version": "0.0.0",
   "engines": {
     "vscode": "^1.96.0"
   },
   "categories": [
     "Other"
   ],
-
+  "activationEvents": [
+    "onLanguage:markdown",
+    "onLanguage:typescript"
+  ],
   "main": "./dist/extension.js",
+  "files": [
+    "dist/",
+    "media/",
+    "src/webview.html"
+  ],
   "contributes": {
     "viewsContainers": {
       "activitybar": [
@@ -26,7 +34,10 @@
         {
           "id": "robotpy-sidebar",
           "name": "RobotPy Commands",
-          "type": "webview"
+          "type": "webview",
+          "webviewOptions": {
+            "retainContextWhenHidden": true
+          }
         }
       ]
     },
@@ -41,7 +52,6 @@
       },
       {
         "command": "robotpy.setTesttype",
-        
         "title": "Set Test Type"
       },
       {

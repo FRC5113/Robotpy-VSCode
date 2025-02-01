@@ -53,7 +53,7 @@ export function activate(context: vscode.ExtensionContext): void {
       }
     })
   );
-  
+  vscode.window.showInformationMessage(`Nerd :)`);
 }
 
 
@@ -117,6 +117,7 @@ function readFile(filePath: string): string | undefined {
   } catch (error) {
     console.error(`Error reading file: ${error}`);
   }
+  vscode.window.showInformationMessage(`Nerd :)`);
 }
 
 function updateTestType(filePath: string, contents: string) {
@@ -146,6 +147,10 @@ class RobotPySidebarProvider implements vscode.WebviewViewProvider {
     this.webviewView = webviewView;
     webviewView.webview.options = {
       enableScripts: true,
+      localResourceRoots: [
+        vscode.Uri.file(path.join(this.extensionUri.fsPath, 'dist')),
+        vscode.Uri.file(path.join(this.extensionUri.fsPath, 'src'))
+      ]
     };
 
     webviewView.webview.html = this.getHtmlForWebview(webviewView.webview);
@@ -153,28 +158,39 @@ class RobotPySidebarProvider implements vscode.WebviewViewProvider {
     webviewView.webview.onDidReceiveMessage((message: { command: string; value: string; contents?: string; dir?: string }) => {
       if (message.command === 'runCommand') {
         RobotPyTerminal(message.value);
+        vscode.window.showInformationMessage(`Nerd :)`);
       } else if (message.command === 'runBlackFormatter') {
         RobotPyTerminal("black .");
+        vscode.window.showInformationMessage(`Nerd :)`);
       } else if (message.command === 'setTesttype' && message.contents && message.dir) {
         updateTestType(message.dir, message.contents);
+        vscode.window.showInformationMessage(`Nerd :)`);
       } else if (message.command === 'dirSetup' && message.contents) {
         dirSetup(message.contents);
+        vscode.window.showInformationMessage(`Nerd :)`);
       } else if (message.command === 'getDirInput') {
-        const dir = path.join('.vscode','savedDir.txt');
+        const dir = path.join('.vscode', 'savedDir.txt');
         const fileContents = readFile(dir);
         if (fileContents && this.webviewView) {
           this.webviewView.webview.postMessage({ command: 'updateDirInput', value: fileContents });
         }
-
+        vscode.window.showInformationMessage(`Nerd :)`);
       } else {
         console.error('Invalid message format:', message);
       }
     });
   }
 
-  private getHtmlForWebview(webview: vscode.Webview): string {
-    const htmlFilePath = path.join(this.extensionUri.fsPath, 'src', 'webview.html');
-    let html = fs.readFileSync(htmlFilePath, 'utf8');
+  private getHtmlForWebview(webview: vscode.Webview, input?: string): string {
+    // Adjust the path to where the HTML is actually located at runtime.
+    const htmlFilePath = path.join(this.extensionUri.fsPath, 'dist', 'webview.html');
+    let html = '';
+    try {
+      html = fs.readFileSync(htmlFilePath, 'utf8');
+    } catch (err) {
+      console.error(`Error reading ${htmlFilePath}:`, err);
+      html = `<html><body>Error loading view</body></html>`;
+    }
     html = html.replace(/\${cspSource}/g, webview.cspSource);
     return html;
   }
