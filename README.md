@@ -24,10 +24,11 @@ This extension is ideal for users who frequently work with RobotPy in their robo
 - RobotPy Sync: Syncs project requirements with the robot, with options to control installation behavior and upgrades.  
 - RobotPy Test: Runs unit tests on the robot code with flags for built-in tests and coverage mode.  
 - Robotpy Sim: Runs the robot simulation with options to configure the GUI, DS socket, and websim extensions for different simulation environments.  
+- and the rest in Robotpy
 - By enabling the selection of multiple flags in one go, the extension streamlines the process of configuring and executing RobotPy commands, improving workflow efficiency.
 
 
-## Building Extension
+## Manual Building Extension (Not Recommended)
 
 ### 1. Install npm (Node Package Manager)
 
