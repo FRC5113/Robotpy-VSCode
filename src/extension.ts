@@ -67,13 +67,15 @@ export function activate(context: vscode.ExtensionContext): void {
   );
 }
 
+let robotPyTerminal: vscode.Terminal | undefined;
+
 function RobotPyTerminal(command: string): void {
-  let robotPyTerminal: vscode.Terminal | undefined;
 
   if (!robotPyTerminal) {
     robotPyTerminal = vscode.window.createTerminal("RobotPy Terminal");
+    robotPyTerminal.show();
   }
-  robotPyTerminal.show();
+  
   robotPyTerminal.sendText(command);
 }
 
@@ -143,16 +145,6 @@ function updateTestType(filePath: string, contents: string) {
 function dirSetup(contents: string) {
   const filePath = path.join(".vscode", "savedDir.txt");
   replaceFile(filePath, contents);
-}
-
-function addDir() {
-  const filePath = path.join(".vscode", "savedDir.txt");
-  const sidebarProvider = new RobotPySidebarProvider(vscode.Uri.file(""));
-  sidebarProvider.postMessage({
-    command: "addDir",
-    elementId: "dir-input",
-    newValue: readFile(filePath),
-  });
 }
 
 class RobotPySidebarProvider implements vscode.WebviewViewProvider {
